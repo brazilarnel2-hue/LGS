@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Receipt — Order #{{ $order->id }}</title>
+    <title>Receipt — Booking #{{ $order->id }}</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -62,7 +62,7 @@
 <body>
 
     <div class="center">
-        <h1>LaundryGo</h1>
+        <h1>GoLaundry</h1>
         <p class="subtitle">Pickup & Delivery Receipt</p>
     </div>
 
@@ -70,7 +70,7 @@
 
     <table>
         <tr>
-            <td class="label">Order #</td>
+            <td class="label">Booking #</td>
             <td class="right">{{ $order->id }}</td>
         </tr>
         <tr>
@@ -94,6 +94,14 @@
                 <td class="right">₱{{ number_format($item->subtotal, 2) }}</td>
             </tr>
         @endforeach
+
+        @if ($order->delivery_fee > 0)
+            <tr>
+                <td>{{ $order->fee_label }}</td>
+                <td class="right">₱{{ number_format($order->delivery_fee, 2) }}</td>
+            </tr>
+        @endif
+
         <tr class="total-row">
             <td>TOTAL</td>
             <td class="right">₱{{ number_format($order->total_amount, 2) }}</td>
@@ -131,7 +139,7 @@
 
     <hr>
 
-    <p class="center subtitle">Thank you for choosing LaundryGo!</p>
+    <p class="center subtitle">Thank you for choosing GoLaundry!</p>
 
     <button class="print-btn" onclick="window.print()">Print Receipt</button>
 

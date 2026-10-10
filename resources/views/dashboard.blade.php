@@ -12,7 +12,7 @@
                 {{-- STAFF / ADMIN DASHBOARD --}}
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="bg-white shadow rounded-lg p-5">
-                        <p class="text-sm text-gray-500">Total Orders</p>
+                        <p class="text-sm text-gray-500">Total Bookings</p>
                         <p class="text-3xl font-bold text-laundry-dark mt-1">{{ $stats['total_orders'] }}</p>
                     </div>
                     <div class="bg-white shadow rounded-lg p-5">
@@ -65,7 +65,7 @@
                 {{-- CUSTOMER DASHBOARD --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="bg-white shadow rounded-lg p-5">
-                        <p class="text-sm text-gray-500">My Total Orders</p>
+                        <p class="text-sm text-gray-500">My Total Bookings</p>
                         <p class="text-3xl font-bold text-laundry-dark mt-1">{{ $stats['total_orders'] }}</p>
                     </div>
                     <div class="bg-white shadow rounded-lg p-5">
@@ -79,22 +79,22 @@
                 </div>
             @endif
 
-            {{-- RECENT ORDERS (shown to everyone, scoped by role) --}}
+            {{-- RECENT BOOKINGS (shown to everyone, scoped by role) --}}
             <div class="bg-white shadow rounded-lg p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-semibold text-lg">Recent Orders</h3>
+                    <h3 class="font-semibold text-lg">Recent Bookings</h3>
                     <a href="{{ route('orders.index') }}" class="text-sm text-laundry-teal hover:underline">
                         View all →
                     </a>
                 </div>
 
                 @if ($recentOrders->isEmpty())
-                    <p class="text-gray-500 text-sm">No orders yet.</p>
+                    <p class="text-gray-500 text-sm">No bookings yet.</p>
                 @else
                     <table class="min-w-full text-sm">
                         <thead>
                             <tr class="text-left text-gray-500 border-b">
-                                <th class="py-2">Order #</th>
+                                <th class="py-2">Booking #</th>
                                 @if ($role === 'staff')
                                     <th class="py-2">Customer</th>
                                 @endif

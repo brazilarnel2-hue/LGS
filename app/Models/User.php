@@ -23,6 +23,7 @@ class User extends Authenticatable
         'role',
         'phone',
         'address',
+        'profile_photo_path',
     ];
 
     /**
@@ -46,5 +47,25 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Public URL of the profile picture, or null if the user has none.
+     * Usage: $user->profile_photo_url
+     */
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        return $this->profile_photo_path
+            ? asset('storage/' . $this->profile_photo_path)
+            : null;
+    }
+
+    /**
+     * First letter of the name, shown when there is no profile picture.
+     * Usage: $user->initial
+     */
+    public function getInitialAttribute(): string
+    {
+        return mb_strtoupper(mb_substr(trim($this->name ?? ''), 0, 1)) ?: '?';
     }
 }

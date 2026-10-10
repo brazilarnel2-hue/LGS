@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Order #{{ $order->id }}
+            Booking #{{ $order->id }}
         </h2>
     </x-slot>
 
@@ -30,7 +30,7 @@
                         @if (in_array(auth()->user()->role, ['staff', 'admin']))
                             <a href="{{ route('orders.edit', $order) }}"
                                class="bg-laundry-dark text-white px-4 py-2 rounded hover:bg-slate-900">
-                                Update Order
+                                Update Booking
                             </a>
                         @endif
                     </div>
@@ -89,6 +89,13 @@
                                 <td class="py-2 text-right">₱{{ number_format($item->subtotal, 2) }}</td>
                             </tr>
                         @endforeach
+
+                        @if ($order->delivery_fee > 0)
+                            <tr class="border-b">
+                                <td class="py-2" colspan="2">{{ $order->fee_label }}</td>
+                                <td class="py-2 text-right">₱{{ number_format($order->delivery_fee, 2) }}</td>
+                            </tr>
+                        @endif
                     </tbody>
                     <tfoot>
                         <tr>
@@ -146,6 +153,11 @@
                             Please prepare <span class="font-semibold">₱{{ number_format($order->total_amount, 2) }}</span>
                             for the driver upon delivery.
                         </p>
+                        @if ($order->delivery_fee > 0)
+                            <p class="text-xs text-gray-500 mt-1">
+                                Includes ₱{{ number_format($order->delivery_fee, 2) }} {{ strtolower($order->fee_label) }}.
+                            </p>
+                        @endif
                     </div>
 
                     @if ($canRecordPayment)
@@ -156,6 +168,34 @@
                                 Mark Cash Received
                             </button>
                         </form>
+                    @endif
+
+                @elseif ($paymentStatus === 'pending' && $order->payment->method === 'gcash')
+                    {{-- GCASH reference submitted, waiting for staff to verify --}}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4">
+                        <span class="text-yellow-800 font-semibold">⏳ GCash payment awaiting verification</span>
+                        <p class="text-sm text-gray-600 mt-1">
+                            Reference No.: <span class="font-semibold">{{ $order->payment->reference_number }}</span>
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            Amount: <span class="font-semibold">₱{{ number_format($order->total_amount, 2) }}</span>
+                        </p>
+                    </div>
+
+                    @if (in_array($user->role, ['staff', 'admin']))
+                        <form method="POST" action="{{ route('orders.payment.verify', $order) }}">
+                            @csrf
+                            <button type="submit" class="bg-laundry-success text-white px-4 py-2 rounded hover:bg-green-700">
+                                Confirm Payment Received
+                            </button>
+                        </form>
+                    @endif
+
+                    @if ($isOwner)
+                        <a href="{{ route('orders.gcash.checkout', $order) }}"
+                           class="inline-block mt-3 text-sm text-gray-500 hover:underline">
+                            Wrong reference number? Submit again
+                        </a>
                     @endif
 
                 @else

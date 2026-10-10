@@ -7,6 +7,8 @@
 
     <title>{{ config('app.name', 'GoLaundry') }}</title>
 
+    <x-favicon />
+
     @fonts
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -20,7 +22,7 @@
             align-items: center;
             justify-content: center;
             padding: 32px 16px;
-            background-color: #0f766e;
+            background-color: #0ea5e9;
             background-image: url('{{ asset('images/banner.jpg') }}');
             background-size: cover;
             background-position: center;
@@ -30,7 +32,7 @@
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg,
-                rgba(19,78,74,.85) 0%, rgba(17,94,89,.65) 55%, rgba(13,148,136,.45) 100%);
+                rgba(7,89,133,.85) 0%, rgba(2,132,199,.65) 55%, rgba(56,189,248,.45) 100%);
         }
 
         .auth-content {
@@ -76,47 +78,15 @@
         .auth-back {
             margin-top: 18px;
             font-size: .9rem;
-            color: #ccfbf1;
+            color: #e0f2fe;
             text-decoration: none;
         }
         .auth-back:hover { color: #fff; text-decoration: underline; }
-
-        .auth-bubbles { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
-        .bubble {
-            position: absolute;
-            bottom: -150px;
-            border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%,
-                rgba(255,255,255,.95), rgba(255,255,255,.25) 55%, rgba(255,255,255,.08));
-            border: 1px solid rgba(255,255,255,.7);
-            box-shadow: inset 0 0 12px rgba(255,255,255,.5);
-            animation: rise linear infinite;
-        }
-        @keyframes rise {
-            0%   { transform: translate(0, 0); opacity: 0; }
-            10%  { opacity: 1; }
-            100% { transform: translate(40px, -120vh); opacity: 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .bubble { animation: none; opacity: .6; bottom: 20%; }
-        }
     </style>
 </head>
 <body style="margin:0; font-family: 'Figtree', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased;">
 
     <div class="auth-bg">
-
-        <div class="auth-bubbles">
-            @foreach (range(1, 14) as $i)
-                @php $size = rand(20, 80); @endphp
-                <span class="bubble"
-                      style="left: {{ rand(0, 95) }}%;
-                             width: {{ $size }}px; height: {{ $size }}px;
-                             animation-duration: {{ rand(10, 22) }}s;
-                             animation-delay: -{{ rand(0, 20) }}s;"></span>
-            @endforeach
-        </div>
-
         <div class="auth-content">
             <a href="/" class="auth-logo">
                 <span class="auth-logo-badge">

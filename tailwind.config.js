@@ -1,7 +1,7 @@
 import defaultTheme from 'tailwindcss/defaultTheme';
 import forms from '@tailwindcss/forms';
 
-/*@type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 export default {
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
@@ -16,10 +16,10 @@ export default {
             },
             colors: {
                 laundry: {
-                    teal: '#0F766E',
+                    teal: '#0284C7',  
                     cyan: '#06B6D4',
-                    sky: '#E0F7FA',
-                    dark: '#1E293B',
+                    sky: '#E0F2FE',    
+                    dark: '#075985',  
                     warning: '#FBBF24',
                     success: '#16A34A',
                 },

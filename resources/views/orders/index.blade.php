@@ -1,7 +1,18 @@
+@php
+    $role = auth()->user()->role;
+
+    // Title ng page depende sa role (kapareho ng navigation)
+    $pageTitle = match ($role) {
+        'customer' => 'My Bookings',
+        'driver'   => 'My Deliveries',
+        default    => 'All Bookings',
+    };
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            My Orders
+            {{ $pageTitle }}
         </h2>
     </x-slot>
 
@@ -15,10 +26,10 @@
             @endif
 
             <div class="flex justify-between items-center mb-4">
-                @if (auth()->user()->role === 'customer')
+                @if ($role === 'customer')
                     <a href="{{ route('orders.create') }}"
                        class="bg-laundry-teal text-white px-4 py-2 rounded hover:bg-laundry-dark">
-                        + New Order
+                        + New Booking
                     </a>
                 @endif
             </div>
@@ -27,7 +38,7 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booking #</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pickup Date</th>
@@ -56,7 +67,7 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                                    No orders yet.
+                                    No bookings yet.
                                 </td>
                             </tr>
                         @endforelse

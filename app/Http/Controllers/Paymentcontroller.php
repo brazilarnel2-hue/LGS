@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -50,8 +50,8 @@ class PaymentController extends Controller
     {
         $user = Auth::user();
 
-        abort_unless($order->customer_id === $user->id, 403, 'This is not your order.');
-        abort_if($order->payment && $order->payment->status === 'paid', 403, 'This order is already paid.');
+        abort_unless($order->customer_id === $user->id, 403, 'This is not your booking.');
+        abort_if($order->payment && $order->payment->status === 'paid', 403, 'This booking is already paid.');
 
         $order->payment()->updateOrCreate(
             ['order_id' => $order->id],
@@ -69,41 +69,78 @@ class PaymentController extends Controller
     }
 
     /**
-     * Show the simulated GCash checkout page (customer only, for their own unpaid order).
+     * Show the GCash checkout page with the shop's QR code
+     * (customer only, for their own unpaid booking).
      */
     public function showGcashCheckout(Order $order)
     {
         $user = Auth::user();
 
-        abort_unless($order->customer_id === $user->id, 403, 'This is not your order.');
-        abort_if($order->payment && $order->payment->status === 'paid', 403, 'This order is already paid.');
+        abort_unless($order->customer_id === $user->id, 403, 'This is not your booking.');
+        abort_if($order->payment && $order->payment->status === 'paid', 403, 'This booking is already paid.');
 
         return view('orders.gcash-checkout', compact('order'));
     }
 
     /**
-     * "Confirm" the simulated GCash payment — generates a fake reference number
-     * and marks the order as paid. No real money or API is involved.
+     * Customer submits the GCash reference number after paying via the shop's QR.
+     * The payment stays "pending" until staff/admin verifies it in the GCash app.
      */
-    public function confirmGcashPayment(Order $order)
+    public function confirmGcashPayment(Request $request, Order $order)
     {
         $user = Auth::user();
 
-        abort_unless($order->customer_id === $user->id, 403, 'This is not your order.');
-        abort_if($order->payment && $order->payment->status === 'paid', 403, 'This order is already paid.');
+        abort_unless($order->customer_id === $user->id, 403, 'This is not your booking.');
+        abort_if($order->payment && $order->payment->status === 'paid', 403, 'This booking is already paid.');
+
+        $validated = $request->validate([
+            'reference_number' => [
+                'required',
+                'string',
+                'min:8',
+                'max:30',
+                // A reference number can't be reused on another booking
+                Rule::unique('payments', 'reference_number')->ignore($order->payment?->id),
+            ],
+        ]);
 
         $order->payment()->updateOrCreate(
             ['order_id' => $order->id],
             [
                 'method' => 'gcash',
-                'reference_number' => 'GC' . now()->format('ymd') . strtoupper(Str::random(8)),
+                'reference_number' => trim($validated['reference_number']),
                 'amount' => $order->total_amount,
-                'status' => 'paid',
-                'paid_at' => now(),
+                'status' => 'pending',
+                'paid_at' => null,
             ]
         );
 
         return redirect()->route('orders.show', $order)
-            ->with('success', 'Payment successful via GCash!');
+            ->with('success', 'Reference number submitted. We will verify your GCash payment shortly.');
+    }
+
+    /**
+     * Staff/admin confirms that the GCash payment was received
+     * (after checking the shop's GCash account).
+     */
+    public function verifyGcash(Order $order)
+    {
+        abort_unless(in_array(Auth::user()->role, ['staff', 'admin']), 403, 'Only staff can verify payments.');
+
+        $payment = $order->payment;
+
+        abort_unless(
+            $payment && $payment->method === 'gcash' && $payment->status === 'pending',
+            404,
+            'No GCash payment is waiting for verification.'
+        );
+
+        $payment->update([
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        return redirect()->route('orders.show', $order)
+            ->with('success', 'GCash payment verified and marked as paid.');
     }
 }
