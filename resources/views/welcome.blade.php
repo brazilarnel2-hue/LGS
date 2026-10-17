@@ -75,7 +75,7 @@
 
         .wave { position: absolute; z-index: 2; bottom: -1px; left: 0; width: 100%; height: 110px; display: block; }
           /* ---------- Features ---------- */
-        .features { position: relative; z-index: 3; margin-top: -40px; padding-bottom: 64px; }
+        .features { position: relative; z-index: 3; margin-top: -40px; padding-bottom: 64px; scroll-margin-top: 24px; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
         .card {
             background: #fff;
@@ -88,6 +88,56 @@
         .card .icon { font-size: 2rem; margin-bottom: 10px; }
         .card h3 { font-size: 1.05rem; font-weight: 600; }
         .card p { margin-top: 6px; font-size: .92rem; color: #4b5563; line-height: 1.5; }
+
+        /* ---------- How It Works ---------- */
+        .how-it-works { padding: 70px 0; }
+        .section-head { text-align: center; max-width: 560px; margin: 0 auto 44px; }
+        .section-head .eyebrow {
+            display: inline-block;
+            font-size: .8rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #0284c7;
+            margin-bottom: 10px;
+        }
+        .section-head h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 700; color: #0f172a; }
+        .section-head p { margin-top: 10px; color: #4b5563; font-size: 1rem; }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            position: relative;
+        }
+        .step {
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px 22px;
+            box-shadow: 0 8px 24px rgba(2,132,199,.08);
+            text-align: center;
+            position: relative;
+        }
+        .step-number {
+            width: 42px;
+            height: 42px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0284c7, #0ea5e9);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+        .step .icon { font-size: 1.8rem; margin-bottom: 10px; }
+        .step h3 { font-size: 1rem; font-weight: 600; color: #0f172a; }
+        .step p { margin-top: 6px; font-size: .88rem; color: #4b5563; line-height: 1.5; }
+
+        @media (max-width: 760px) {
+            .steps { grid-template-columns: 1fr 1fr; }
+        }
 
         /* ---------- Footer ---------- */
         .site-footer {
@@ -165,7 +215,7 @@
 
         <div class="container">
             <header class="nav">
-                <span class="logo">GoLaundry</span>
+                <span class="logo">WAVES N' BUBBLES LAUNDRYSHOP</span>
                 <nav class="nav-links">
                     @auth
                         <a href="{{ url('/dashboard') }}" class="btn btn-white">Dashboard</a>
@@ -201,7 +251,7 @@
         </svg>
     </section>
 
-    <section class="features">
+    <section class="features" id="features">
         <div class="container">
             <div class="grid">
                 <div class="card">
@@ -223,12 +273,49 @@
         </div>
     </section>
 
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-head">
+                <span class="eyebrow">How It Works</span>
+                <h2>Laundry day, sorted in 4 easy steps</h2>
+                <p>From booking to clean clothes at your door — we handle the rest.</p>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="icon">📲</div>
+                    <h3>Book Online</h3>
+                    <p>Choose your service and schedule a pickup in just a few clicks.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="icon">🚗</div>
+                    <h3>We Pick Up</h3>
+                    <p>Our driver collects your laundry right at your doorstep.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="icon">🧺</div>
+                    <h3>We Wash &amp; Fold</h3>
+                    <p>Your clothes are cleaned, dried, and neatly folded with care.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="icon">🏠</div>
+                    <h3>We Deliver</h3>
+                    <p>Fresh, clean laundry delivered back to you — track it the whole way.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <footer class="site-footer">
         <div class="container">
             <div class="footer-grid">
 
                 <div class="footer-brand">
-                    <span class="logo">GoLaundry</span>
+                    <span class="logo">WAVES N' BUBBLES LAUNDRYSHOP</span>
                     <p>Fresh, clean laundry with pickup and delivery. Book in a few clicks and track your order anytime.</p>
                     <div class="socials">
                         <a href="#" aria-label="Facebook">
@@ -258,18 +345,24 @@
                 <div class="footer-col">
                     <h4>Our Services</h4>
                     <ul>
-                        <li>Wash &amp; Fold</li>
-                        <li>Pickup &amp; Delivery</li>
-                        <li>Order Tracking</li>
+                        <li><a href="{{ url('/#features') }}">Wash &amp; Fold</a></li>
+                        <li><a href="{{ url('/#features') }}">Pickup &amp; Delivery</a></li>
+                        <li>
+                            @auth
+                                <a href="{{ route('orders.index') }}">Order Tracking</a>
+                            @else
+                                <a href="{{ route('login') }}">Order Tracking</a>
+                            @endauth
+                        </li>
                     </ul>
                 </div>
 
                 <div class="footer-col">
                     <h4>Contact Us</h4>
                     <ul>
-                        <li>📍 Your shop address here</li>
-                        <li>📞 09XX XXX XXXX</li>
-                        <li>✉️ hello@golaundry.test</li>
+                        <li><a href="https://maps.app.goo.gl/UXQkwY5h3xLhVcJq6" target="_blank" rel="noopener">📍 Maharlika Highway, Brgy. Bunga, Abuyog, Leyte</a></li>
+                        <li><a href="tel:09XXXXXXXXX">📞 09XX XXX XXXX</a></li>
+                        <li><a href="mailto:hello@golaundry.test">✉️ hello@golaundry.test</a></li>
                         <li>🕒 Mon–Sat, 8:00 AM – 6:00 PM</li>
                     </ul>
                 </div>
@@ -277,7 +370,7 @@
             </div>
 
             <div class="footer-bottom">
-                <span>&copy; {{ date('Y') }} GoLaundry. All rights reserved.</span>
+                <span>&copy; {{ date('Y') }} WAVES N' BUBBLES LAUNDRYSHOP. All rights reserved.</span>
                 <span>Made with 💙 for fresh, clean laundry</span>
             </div>
         </div>

@@ -92,7 +92,7 @@
                 <span class="auth-logo-badge">
                     <x-application-logo />
                 </span>
-                <span class="auth-brand">GoLaundry</span>
+                <span class="auth-brand">WAVES N' BUBBLES LAUNDRY SHOP</span>
             </a>
 
             <div class="auth-card">

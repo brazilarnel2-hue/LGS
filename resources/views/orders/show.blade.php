@@ -14,6 +14,12 @@
                 </div>
             @endif
 
+            @if (session('error'))
+                <div class="p-4 bg-red-100 text-red-800 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <div class="bg-white shadow rounded-lg p-6">
                 <div class="flex justify-between items-start mb-4">
                     <div>
@@ -254,6 +260,52 @@
                     @endif
                 @endif
             </div>
+
+            @if ($isOwner && $order->status === 'delivered')
+                <div class="bg-white shadow rounded-lg p-6">
+                    <h3 class="font-semibold mb-3">Rate this Booking</h3>
+
+                    @if ($order->review)
+                        <div class="flex items-center gap-1 text-yellow-400 text-2xl mb-2">
+                            @for ($i = 1; $i <= 5; $i++)
+                                {{ $i <= $order->review->rating ? '★' : '☆' }}
+                            @endfor
+                        </div>
+                        @if ($order->review->comment)
+                            <p class="text-sm text-gray-600">{{ $order->review->comment }}</p>
+                        @endif
+                        <p class="text-xs text-gray-400 mt-2">Salamat sa iyong feedback!</p>
+                    @else
+                        <form method="POST" action="{{ route('orders.review.store', $order) }}" x-data="{ rating: 0 }">
+                            @csrf
+                            <input type="hidden" name="rating" x-model="rating">
+
+                            <p class="text-sm text-gray-600 mb-2">Paano mo i-rate ang serbisyo namin?</p>
+
+                            <div class="flex gap-1 text-3xl mb-3">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <button type="button" @click="rating = {{ $i }}"
+                                            :class="rating >= {{ $i }} ? 'text-yellow-400' : 'text-gray-300'"
+                                            class="hover:text-yellow-400 transition">
+                                        ★
+                                    </button>
+                                @endfor
+                            </div>
+                            @error('rating')
+                                <p class="text-sm text-red-600 mb-2">{{ $message }}</p>
+                            @enderror
+
+                            <textarea name="comment" rows="3" placeholder="Isulat ang iyong feedback (optional)"
+                                      class="w-full rounded border-gray-300 mb-3"></textarea>
+
+                            <button type="submit" x-bind:disabled="rating === 0"
+                                    class="bg-laundry-teal text-white px-4 py-2 rounded hover:bg-laundry-dark disabled:opacity-50">
+                                Submit Review
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            @endif
 
             <div class="bg-white shadow rounded-lg p-6">
                 <h3 class="font-semibold mb-3">Status History</h3>

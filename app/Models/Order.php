@@ -58,6 +58,10 @@ class Order extends Model
     {
         return $this->hasMany(OrderStatusHistory::class);
     }
+       public function review()
+   {
+       return $this->hasOne(Review::class);
+   }
 
     /**
      * Driver trip fee based on how the laundry gets to and from the shop.

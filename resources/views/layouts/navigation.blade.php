@@ -16,7 +16,7 @@
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
                         <x-application-logo class="block h-10 w-auto text-white" />
-                        <span class="text-white font-bold text-xl tracking-wide">GoLaundry</span>
+                
                     </a>
                 </div>
 
@@ -32,6 +32,12 @@
                        class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition
                               {{ request()->routeIs('orders.*') ? 'border-white text-white' : 'border-transparent text-sky-100 hover:text-white hover:border-sky-200' }}">
                         {{ $ordersLabel }}
+                    </a>
+
+                    <a href="{{ route('reviews.index') }}"
+                       class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition
+                              {{ request()->routeIs('reviews.*') ? 'border-white text-white' : 'border-transparent text-sky-100 hover:text-white hover:border-sky-200' }}">
+                        Reviews
                     </a>
 
                     @if ($role === 'admin')
@@ -115,6 +121,11 @@
             <a href="{{ route('orders.index') }}"
                class="block px-4 py-2 text-base font-medium {{ request()->routeIs('orders.*') ? 'text-white bg-sky-800' : 'text-sky-100 hover:text-white hover:bg-sky-800' }}">
                 {{ $ordersLabel }}
+            </a>
+
+            <a href="{{ route('reviews.index') }}"
+               class="block px-4 py-2 text-base font-medium {{ request()->routeIs('reviews.*') ? 'text-white bg-sky-800' : 'text-sky-100 hover:text-white hover:bg-sky-800' }}">
+                Reviews
             </a>
 
             @if ($role === 'admin')

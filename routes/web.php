@@ -4,6 +4,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -13,13 +15,15 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', EnsureUserIsActive::class])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', EnsureUserIsActive::class])->group(function () {
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('services', AdminServiceController::class);
-        Route::resource('users', AdminUserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+        Route::resource('users', AdminUserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+        Route::patch('/users/{user}/deactivate', [AdminUserController::class, 'deactivate'])->name('users.deactivate');
+        Route::patch('/users/{user}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
         Route::get('/settings', [AdminSettingController::class, 'edit'])->name('settings.edit');
         Route::post('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
         Route::post('/settings/reset', [AdminSettingController::class, 'reset'])->name('settings.reset');
@@ -38,6 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/{order}/pay-gcash', [PaymentController::class, 'confirmGcashPayment'])->name('orders.gcash.confirm');
     Route::post('/orders/{order}/pay-cod', [PaymentController::class, 'selectCod'])->name('orders.cod.select');
     Route::post('/orders/{order}/pay-personal', [PaymentController::class, 'selectPersonal'])->name('orders.personal.select');
+
+    Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::post('/orders/{order}/review', [ReviewController::class, 'store'])->name('orders.review.store');
 });
 
 require __DIR__.'/auth.php';

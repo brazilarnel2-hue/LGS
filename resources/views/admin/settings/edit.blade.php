@@ -34,7 +34,7 @@
                     <p class="text-sm text-gray-500 mb-2">Current logo:</p>
                     <div class="flex items-center gap-3 bg-laundry-teal rounded-lg p-4 w-fit">
                         <x-application-logo class="block h-12 w-auto text-white" />
-                        <span class="text-white font-bold text-lg">GoLaundry</span>
+                        
                     </div>
                 </div>
 

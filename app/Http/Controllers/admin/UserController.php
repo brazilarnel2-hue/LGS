@@ -73,14 +73,27 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User role updated.');
     }
 
-    public function destroy(User $user)
+    public function deactivate(User $user)
     {
         $this->ensureAdmin();
 
-        abort_if($user->id === Auth::id(), 403, 'You cannot delete your own account.');
+        abort_if($user->id === Auth::id(), 403, 'Hindi mo puwedeng i-deactivate ang sarili mong account.');
 
-        $user->delete();
+        abort_unless(in_array($user->role, ['staff', 'driver']), 403, 'Staff at driver accounts lang ang puwedeng i-deactivate.');
 
-        return redirect()->route('admin.users.index')->with('success', 'User account removed.');
+        $user->update(['is_active' => false]);
+
+        return redirect()->route('admin.users.index')->with('success', $user->name . ' has been deactivated.');
+    }
+
+    public function activate(User $user)
+    {
+        $this->ensureAdmin();
+
+        abort_unless(in_array($user->role, ['staff', 'driver']), 403, 'Staff at driver accounts lang ang puwedeng i-activate.');
+
+        $user->update(['is_active' => true]);
+
+        return redirect()->route('admin.users.index')->with('success', $user->name . ' has been activated.');
     }
 }
