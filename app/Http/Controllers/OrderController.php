@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Barangay;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\User;
@@ -33,8 +34,20 @@ class OrderController extends Controller
     {
         abort_unless(Auth::user()->role === 'customer', 403, 'Only customers can place orders.');
 
-        $services = Service::where('is_active', true)->get();
-        return view('orders.create', compact('services'));
+        $services  = Service::where('is_active', true)->get();
+        $barangays = Barangay::orderBy('is_serviceable', 'desc')
+            ->orderBy('name')
+            ->get(['id', 'name', 'distance_km', 'is_serviceable']);
+
+        // Para sa live na preview ng fee sa form (iisang source ng formula)
+        $pricing = [
+            'base_fee'           => Order::BASE_FEE,
+            'rate_per_km'        => Order::RATE_PER_KM,
+            'package_multiplier' => Order::PACKAGE_MULTIPLIER,
+            'kg_per_load'        => Order::KG_PER_LOAD,
+        ];
+
+        return view('orders.create', compact('services', 'barangays', 'pricing'));
     }
 
     /**
@@ -53,6 +66,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'pickup_option' => 'required|in:driver,shop',
             'return_option' => 'required|in:deliver,shop',
+            'barangay_id' => 'required_if:pickup_option,driver|required_if:return_option,deliver|nullable|exists:barangays,id',
             'pickup_address' => 'required_if:pickup_option,driver|nullable|string|max:255',
             'delivery_address' => 'required_if:return_option,deliver|nullable|string|max:255',
             'scheduled_pickup_at' => 'required|date',
@@ -61,18 +75,45 @@ class OrderController extends Controller
             'services' => 'required|array|min:1',
             'services.*.id' => 'required|exists:services,id',
             'services.*.quantity' => 'required|numeric|min:0.1',
+        ], [
+            'barangay_id.required_if' => 'Please select your barangay.',
         ]);
 
         $driverPickup = $validated['pickup_option'] === 'driver';
         $wantsDelivery = $validated['return_option'] === 'deliver';
+
+        // Ang distansya ay galing na sa napiling barangay (hindi na sa mapa)
+        $barangay = !empty($validated['barangay_id'])
+            ? Barangay::findOrFail($validated['barangay_id'])
+            : null;
+
+        // Hindi pa namin kaya puntahan ang lugar na pinili (outside service area) —
+        // kailangan pumili ng shop drop-off/pick-up sa halip na driver.
+        if (($driverPickup || $wantsDelivery) && $barangay && !$barangay->is_serviceable) {
+            return back()->withInput()->withErrors([
+                'barangay_id' => 'Sorry, we don\'t offer pickup/delivery in your area yet. Please choose "I\'ll drop it off / pick it up at the shop" instead.',
+            ]);
+        }
+
+        $distanceKm = $barangay?->distance_km;
+
+        $servicesById = Service::whereIn('id', collect($validated['services'])->pluck('id'))
+            ->get()
+            ->keyBy('id');
 
         $order = Order::create([
             'customer_id' => Auth::id(),
             'status' => 'pending',
             'pickup_option' => $validated['pickup_option'],
             'return_option' => $validated['return_option'],
+            'barangay_id' => $barangay?->id,
             // Pickup + delivery = package fee; only one = single fee; none = free
-            'delivery_fee' => Order::calculateTripFee($validated['pickup_option'], $validated['return_option']),
+            // Ang bayad ay awtomatikong base sa distansya ng napiling barangay lang
+            'delivery_fee' => Order::calculateTripFee(
+                $validated['pickup_option'],
+                $validated['return_option'],
+                $distanceKm
+            ),
             'pickup_address' => $driverPickup
                 ? $validated['pickup_address']
                 : 'Customer drop-off at shop',
@@ -87,11 +128,20 @@ class OrderController extends Controller
         ]);
 
         foreach ($validated['services'] as $item) {
-            $service = Service::findOrFail($item['id']);
+            $service = $servicesById->get($item['id']) ?? Service::findOrFail($item['id']);
+
+            // "load" unit = flat na bayad kada 8kg (naka-round up), hindi diretsong
+            // price x kg. Halimbawa: 5kg o 8kg, parehong 1 load; 9kg = 2 loads.
+            if ($service->unit === 'load') {
+                $subtotal = $service->price * Order::loadsForKg((float) $item['quantity']);
+            } else {
+                $subtotal = $service->price * $item['quantity'];
+            }
+
             $order->items()->create([
                 'service_id' => $service->id,
                 'quantity' => $item['quantity'],
-                'subtotal' => $service->price * $item['quantity'],
+                'subtotal' => $subtotal,
             ]);
         }
 
@@ -100,6 +150,10 @@ class OrderController extends Controller
             'status' => 'pending',
             'changed_by' => Auth::id(),
         ]);
+
+        // Walang Payment record na agad gagawin dito — pipiliin ng customer sa
+        // order show page kung GCash o Cash on Delivery (PaymentController ang
+        // bahala dun), kaya kailangang blangko muna ito pagkatapos mag-book.
 
         return redirect()->route('orders.show', $order)
             ->with('success', 'Booking placed successfully!');
@@ -119,7 +173,7 @@ class OrderController extends Controller
 
         abort_unless($canView, 403, 'You are not allowed to view this order.');
 
-        $order->load(['items.service', 'customer', 'driver', 'payment', 'statusHistories']);
+        $order->load(['items.service', 'customer', 'driver', 'payment', 'statusHistories', 'barangay']);
         return view('orders.show', compact('order'));
     }
 
@@ -173,7 +227,34 @@ class OrderController extends Controller
         return redirect()->route('orders.show', $order)
             ->with('success', 'Order updated.');
     }
+    /**
+     * Customer cancels their own booking (pending lang, at hindi pa bayad).
+     */
+    public function cancel(Order $order)
+    {
+        $user = Auth::user();
 
+        abort_unless(
+            $user->role === 'customer' && $order->customer_id === $user->id,
+            403,
+            'You can only cancel your own booking.'
+        );
+
+        if ($order->status !== 'pending') {
+            return redirect()->route('orders.show', $order)
+                ->with('error', 'This booking can no longer be cancelled because it is already being processed.');
+        }
+
+        if (optional($order->payment)->status === 'paid') {
+            return redirect()->route('orders.show', $order)
+                ->with('error', 'This booking is already paid. Please contact the shop to cancel it.');
+        }
+
+        $order->updateStatus('cancelled', $user->id);
+
+        return redirect()->route('orders.show', $order)
+            ->with('success', 'Your booking has been cancelled.');
+    }
     /**
      * Cancel/delete an order (staff/admin only).
      */

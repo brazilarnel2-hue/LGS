@@ -20,6 +20,13 @@
                 </div>
             @endif
 
+            @php
+                $user = auth()->user();
+                $isOwner = $user->role === 'customer' && $user->id === $order->customer_id;
+                $isAssignedDriver = $user->role === 'driver' && $user->id === $order->driver_id;
+                $canNavigate = $isAssignedDriver || in_array($user->role, ['staff', 'admin']);
+            @endphp
+
             <div class="bg-white shadow rounded-lg p-6">
                 <div class="flex justify-between items-start mb-4">
                     <div>
@@ -33,7 +40,21 @@
                            class="bg-laundry-teal text-white px-4 py-2 rounded hover:bg-laundry-dark">
                             View Receipt
                         </a>
-                        @if (in_array(auth()->user()->role, ['staff', 'admin']))
+                                                @if (auth()->user()->role === 'customer'
+                            && auth()->id() === $order->customer_id
+                            && $order->status === 'pending'
+                            && ($order->payment->status ?? null) !== 'paid')
+                            <form method="POST" action="{{ route('orders.cancel', $order) }}"
+                                  onsubmit="return confirm('Cancel this booking? This cannot be undone.');">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit"
+                                        class="bg-white border border-red-300 text-red-600 px-4 py-2 rounded hover:bg-red-50">
+                                    Cancel Booking
+                                </button>
+                            </form>
+                        @endif
+                        @if (in_array($user->role, ['staff', 'admin']))
                             <a href="{{ route('orders.edit', $order) }}"
                                class="bg-laundry-dark text-white px-4 py-2 rounded hover:bg-slate-900">
                                 Update Booking
@@ -41,6 +62,23 @@
                         @endif
                     </div>
                 </div>
+
+                @php
+                    // Para sa Google Maps navigation ng driver/staff.
+                    // Mga LUMANG order na may pin pa (customer_lat/lng) = gamitin pa rin ang pin.
+                    // Mga BAGONG order = address + barangay ang ipapasa sa Google Maps.
+                    $pinDestination = ($order->customer_lat && $order->customer_lng)
+                        ? $order->customer_lat . ',' . $order->customer_lng
+                        : null;
+
+                    // Palitan ang "Abuyog, Leyte" kung iba ang bayan ng mga barangay mo
+                    $placeSuffix = $order->barangay
+                        ? ', ' . $order->barangay->name . ', Abuyog, Leyte'
+                        : '';
+
+                    $pickupDestination = $pinDestination ?? urlencode($order->pickup_address . $placeSuffix);
+                    $deliveryDestination = $pinDestination ?? urlencode($order->delivery_address . $placeSuffix);
+                @endphp
 
                 <dl class="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -51,13 +89,35 @@
                         <dt class="text-gray-500">Driver</dt>
                         <dd>{{ $order->driver->name ?? 'Not yet assigned' }}</dd>
                     </div>
+                    @if ($order->barangay)
+                        <div class="col-span-2">
+                            <dt class="text-gray-500">Barangay</dt>
+                            <dd>{{ $order->barangay->name }}</dd>
+                        </div>
+                    @endif
                     <div>
                         <dt class="text-gray-500">Pickup Address</dt>
-                        <dd>{{ $order->pickup_address }}</dd>
+                        <dd>
+                            {{ $order->pickup_address }}
+                            @if ($canNavigate && $order->pickup_option === 'driver')
+                                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $pickupDestination }}"
+                                   target="_blank" class="block text-xs text-laundry-teal hover:underline mt-1">
+                                    📍 Navigate to pickup address
+                                </a>
+                            @endif
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-gray-500">Delivery Address</dt>
-                        <dd>{{ $order->delivery_address }}</dd>
+                        <dd>
+                            {{ $order->delivery_address }}
+                            @if ($canNavigate && $order->return_option === 'deliver')
+                                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $deliveryDestination }}"
+                                   target="_blank" class="block text-xs text-laundry-teal hover:underline mt-1">
+                                    📍 Navigate to delivery address
+                                </a>
+                            @endif
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-gray-500">Pickup Schedule</dt>
@@ -116,8 +176,6 @@
                 <h3 class="font-semibold mb-3">Payment</h3>
 
                 @php
-                    $user = auth()->user();
-                    $isOwner = $user->role === 'customer' && $user->id === $order->customer_id;
                     $canRecordPayment = in_array($user->role, ['staff', 'admin']) || $order->driver_id === $user->id;
                     $paymentStatus = $order->payment->status ?? null; // null, 'pending', or 'paid'
                 @endphp
@@ -197,7 +255,8 @@
                         </form>
                     @endif
 
-                    @if ($isOwner)
+                    
+                    @if ($isOwner && $order->status !== 'cancelled')
                         <a href="{{ route('orders.gcash.checkout', $order) }}"
                            class="inline-block mt-3 text-sm text-gray-500 hover:underline">
                             Wrong reference number? Submit again
@@ -274,13 +333,13 @@
                         @if ($order->review->comment)
                             <p class="text-sm text-gray-600">{{ $order->review->comment }}</p>
                         @endif
-                        <p class="text-xs text-gray-400 mt-2">Salamat sa iyong feedback!</p>
+                        <p class="text-xs text-gray-400 mt-2">Thank you for your feedback!</p>
                     @else
                         <form method="POST" action="{{ route('orders.review.store', $order) }}" x-data="{ rating: 0 }">
                             @csrf
                             <input type="hidden" name="rating" x-model="rating">
 
-                            <p class="text-sm text-gray-600 mb-2">Paano mo i-rate ang serbisyo namin?</p>
+                            <p class="text-sm text-gray-600 mb-2">How would you rate our service?</p>
 
                             <div class="flex gap-1 text-3xl mb-3">
                                 @for ($i = 1; $i <= 5; $i++)
@@ -295,7 +354,7 @@
                                 <p class="text-sm text-red-600 mb-2">{{ $message }}</p>
                             @enderror
 
-                            <textarea name="comment" rows="3" placeholder="Isulat ang iyong feedback (optional)"
+                            <textarea name="comment" rows="3" placeholder="Write your feedback (optional)"
                                       class="w-full rounded border-gray-300 mb-3"></textarea>
 
                             <button type="submit" x-bind:disabled="rating === 0"

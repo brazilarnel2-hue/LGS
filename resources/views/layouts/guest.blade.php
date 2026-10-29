@@ -22,8 +22,8 @@
             align-items: center;
             justify-content: center;
             padding: 32px 16px;
-            background-color: #0ea5e9;
-            background-image: url('{{ asset('images/banner.jpg') }}');
+            background-color: #0e6e8c;
+            background-image: url('{{ asset('images/hero-bg.png') }}');
             background-size: cover;
             background-position: center;
         }
@@ -32,7 +32,7 @@
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg,
-                rgba(7,89,133,.85) 0%, rgba(2,132,199,.65) 55%, rgba(56,189,248,.45) 100%);
+                rgba(5,60,78,.60) 0%, rgba(5,60,78,.35) 50%, rgba(5,60,78,.15) 100%);
         }
 
         .auth-content {
@@ -57,14 +57,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 88px;
-            height: 88px;
-            border-radius: 24px;
+            padding: 14px 22px;
+            border-radius: 20px;
             background: rgba(255,255,255,.92);
             box-shadow: 0 10px 30px rgba(0,0,0,.25);
         }
-        .auth-logo-badge svg, .auth-logo-badge img { width: 56px; height: 56px; }
-        .auth-brand { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
+        .auth-logo-badge img { height: 56px; width: auto; max-width: 280px; object-fit: contain; }
 
         .auth-card {
             width: 100%;
@@ -92,7 +90,6 @@
                 <span class="auth-logo-badge">
                     <x-application-logo />
                 </span>
-                <span class="auth-brand">WAVES N' BUBBLES LAUNDRY SHOP</span>
             </a>
 
             <div class="auth-card">

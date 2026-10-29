@@ -15,11 +15,13 @@ export default {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                // Tinugma sa blue-teal palette ng welcome page
+                // (#075985 / #0284c7 / #0ea5e9) para magkatugma ang buong site.
                 laundry: {
-                    teal: '#0284C7',  
-                    cyan: '#06B6D4',
-                    sky: '#E0F2FE',    
-                    dark: '#075985',  
+                    teal: '#0284c7',
+                    cyan: '#38bdf8',
+                    sky: '#e0f2fe',
+                    dark: '#075985',
                     warning: '#FBBF24',
                     success: '#16A34A',
                 },
